@@ -1,104 +1,108 @@
 <?php
 
-function solveEquation($a, $b, $c, $d, $xPrime, $yPrime, $rM, $rN, $m, $n) {
-    // Tạo ma trận và vector từ các giá trị đầu vào
-    $matrixA = [
-        [$a, $c],
-        [$b, $d]
-    ];
-    $vectorB = [
-        [$xPrime - $rM],
-        [$yPrime - $rN]
-    ];
-    $modulusVector = [
-        [$m],
-        [$n]
-    ];
-
-    // Tính nghịch đảo của ma trận modulo
-    $inverseMatrix = inverseMatrixModulo($matrixA, $modulusVector);
-
-    // Tính kết quả
-    $resultVector = multiplyMatrixVectorModulo($inverseMatrix, $vectorB, $modulusVector);
-
-    // Trả về giá trị x và y
-    return [$resultVector[0][0], $resultVector[1][0]];
+/**
+ * tinh dinh thuc
+ * @param $matrix
+ * @return float|int
+ */
+function determinant($matrix)
+{
+    return $matrix[0][0] * $matrix[1][1] - $matrix[0][1] * $matrix[1][0];
 }
 
-function inverseMatrixModulo($matrix, $modulusVector) {
-    // Tính determinant của ma trận
-    $det = ($matrix[0][0] * $matrix[1][1] - $matrix[0][1] * $matrix[1][0]) % $modulusVector[0][0];
-
-    // Tính nghịch đảo modulo
-    $detInverse = modInverse($det, $modulusVector[0][0]);
-
-    // Tính nghịch đảo của ma trận
-    $inverseMatrix = [
-        [$matrix[1][1], -$matrix[0][1]],
-        [-$matrix[1][0], $matrix[0][0]]
-    ];
-
-    // Nhân nghịch đảo determinant vào từng phần tử của ma trận nghịch đảo
-    foreach ($inverseMatrix as &$row) {
-        foreach ($row as &$element) {
-            $element = ($element * $detInverse) % $modulusVector[0][0];
-        }
+/**
+ * tinh nghich dao
+ * @param $matrix
+ * @return array[]|void
+ */
+function modInverse($matrix)
+{
+    $det = determinant($matrix);
+    if ($det == 0) {
+        die("Ma trận không có ma trận nghịch đảo vì định thức bằng 0.");
     }
-
+    $inverseMatrix = [
+        [$matrix[1][1] / $det, -$matrix[0][1] / $det],
+        [-$matrix[1][0] / $det, $matrix[0][0] / $det]
+    ];
     return $inverseMatrix;
 }
 
-function multiplyMatrixVectorModulo($matrix, $vector, $modulusVector) {
-    $result = [];
-    foreach ($matrix as $row) {
-        $sum = 0;
-        foreach ($row as $index => $element) {
-            $sum = ($sum + $element * $vector[$index][0]) % $modulusVector[0][0];
+/**
+ * tinh Tich 2 ma tran
+ * @param $matrix1
+ * @param $matrix2
+ * @return array|void
+ */
+function multiplyMatrices($matrix1, $matrix2)
+{
+    $rows1 = count($matrix1);
+    $cols1 = count($matrix1[0]);
+    $rows2 = count($matrix2);
+    $cols2 = count($matrix2[0]);
+
+    if ($cols1 == $rows2) {
+        $result = array();
+        for ($i = 0; $i < $rows1; $i++) {
+            for ($j = 0; $j < $cols2; $j++) {
+                $sum = 0;
+                for ($k = 0; $k < $cols1; $k++) {
+                    $sum += $matrix1[$i][$k] * $matrix2[$k][$j];
+                }
+                $result[$i][$j] = $sum;
+            }
         }
-        $result[] = [$sum];
+        return $result;
+    } else {
+        die("Sorry! Multiplication is not possible");
     }
-    return $result;
 }
 
-// Hàm tính nghịch đảo modulo
-function modInverse($a, $m) {
-    $m0 = $m;
-    $x0 = 0;
-    $x1 = 1;
-
-    while ($a > 1) {
-        $q = intval($a / $m);
-        $t = $m;
-
-        $m = $a % $m;
-        $a = $t;
-
-        $t = $x0;
-        $x0 = $x1 - $q * $x0;
-        $x1 = $t;
-    }
-
-    if ($x1 < 0) {
-        $x1 += $m0;
-    }
-
-    return $x1;
+/**
+ * tim gia tri x y
+ * @param $det
+ * @param $x
+ * @return int
+ */
+function findValue($det, $x)
+{
+    return $det%$x;
 }
 
-// Sử dụng ví dụ:
-$a = 2;
-$b = 1;
-$c = 3;
-$d = 4;
-$xPrime = 5;
-$yPrime = 6;
-$rM = 1;
-$rN = 2;
-$m = 5;
-$n = 7;
+$matrix1 = array(
+    array(1, 2),
+    array(3, 4)
+);
 
-list($x, $y) = solveEquation($a, $b, $c, $d, $xPrime, $yPrime, $rM, $rN, $m, $n);
+$matrix2 = array(
+    array(3),
+    array(5)
+);
 
-echo "x = $x\n";
-echo "y = $y\n";
+$m = 2;
+$n = 3;
+
+$inverseMatrix = modInverse($matrix1);
+echo "Ma trận nghịch đảo là:\n";
+foreach ($inverseMatrix as $row) {
+    foreach ($row as $element) {
+        echo $element . " ";
+    }
+    echo "\n";
+}
+
+$resultMatrix = multiplyMatrices($inverseMatrix, $matrix2);
+
+echo "\nTích ma trận nghịch đảo và vector:\n";
+foreach ($resultMatrix as $row) {
+    foreach ($row as $element) {
+        echo $element . "\t";
+    }
+    echo "\n";
+}
+
+$det = determinant($resultMatrix);
+
+echo ('Gia tri cua X la:'. findValue($det, $m));
+echo ('Gia tri cua Y la:'. findValue($det, $n));
 ?>
